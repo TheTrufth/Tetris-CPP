@@ -53,24 +53,25 @@ int main(int argc, char *argv[])
             tetromino.update();
         }
 
-        // Render
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        // Clear the screen first
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Black background
         SDL_RenderClear(renderer);
 
-        // Grid
-        SDL_SetRenderDrawColor(renderer, 80, 80, 80, 255);
+        // Draw the grid
+        SDL_SetRenderDrawColor(renderer, 80, 80, 80, 255); // Light gray grid
         for (int x = 0; x < GRID_WIDTH; ++x)
         {
             for (int y = 0; y < GRID_HEIGHT; ++y)
             {
                 SDL_Rect block = {x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE};
-                SDL_RenderDrawRect(renderer, &block);
+                SDL_RenderDrawRect(renderer, &block); // Draw the grid cell
             }
         }
 
-        // Draw Tetromino
-        tetromino.draw(renderer);
+        // Draw the active Tetromino
+        tetromino.draw(renderer); // Make sure tetromino is drawn after the grid
 
+        // Present the renderer to the screen
         SDL_RenderPresent(renderer);
 
         Uint32 frameTime = SDL_GetTicks() - frameStart;
