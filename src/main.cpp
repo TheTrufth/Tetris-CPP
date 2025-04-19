@@ -43,6 +43,8 @@ int main(int argc, char *argv[])
         {
             if (event.type == SDL_QUIT)
                 running = false;
+            else
+                tetromino.handleInput(event); // ← New line
         }
 
         // Logic
