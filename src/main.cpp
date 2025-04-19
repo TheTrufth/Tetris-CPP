@@ -6,7 +6,8 @@ const int GRID_WIDTH = 10;
 const int GRID_HEIGHT = 20;
 const int BLOCK_SIZE = 30;
 
-const int SCREEN_WIDTH = GRID_WIDTH * BLOCK_SIZE;
+const int PREVIEW_BOX_WIDTH = 6 * BLOCK_SIZE;                              // Width of the preview box (6x6 blocks)
+const int SCREEN_WIDTH = GRID_WIDTH * BLOCK_SIZE + PREVIEW_BOX_WIDTH + 40; // Add padding for the preview box
 const int SCREEN_HEIGHT = GRID_HEIGHT * BLOCK_SIZE;
 const int FPS = 60;
 const int FRAME_DELAY = 1000 / FPS;
@@ -45,7 +46,7 @@ int main(int argc, char *argv[])
             if (event.type == SDL_QUIT)
                 running = false;
             else
-                tetromino.handleInput(event); // ← New line
+                tetromino.handleInput(event);
         }
 
         // Logic
@@ -70,7 +71,12 @@ int main(int argc, char *argv[])
         }
 
         // Draw the active Tetromino
-        tetromino.draw(renderer); // Make sure tetromino is drawn after the grid
+        tetromino.draw(renderer);
+
+        // Draw the next Tetromino preview to the right of the grid
+        int previewOffsetX = GRID_WIDTH * BLOCK_SIZE + 20; // Offset to the right of the grid
+        int previewOffsetY = 50;                           // Offset from the top
+        tetromino.drawNextTetromino(renderer, previewOffsetX, previewOffsetY);
 
         // Present the renderer to the screen
         SDL_RenderPresent(renderer);

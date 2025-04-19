@@ -15,6 +15,8 @@ public:
     void rotate();
     void draw(SDL_Renderer *renderer);
 
+    void drawNextTetromino(SDL_Renderer *renderer, int offsetX, int offsetY);
+
     int getMinX() const;
     int getMaxX() const;
     int getHeight() const;
@@ -31,6 +33,7 @@ public:
     static void setGrid(int grid[GRID_HEIGHT][GRID_WIDTH]);
     static int grid[GRID_HEIGHT][GRID_WIDTH]; // Game grid
     static SDL_Color tetrominoColors[7];
+    static bool running; // Declare the static member variable
 
 private:
     int x, y;        // Position on the grid
@@ -41,7 +44,10 @@ private:
     int currentShapeIndex;               // To track which shape is currently being used
     int rotationIndex;                   // Current rotation of the tetromino
     SDL_Color color;
-    bool ghostEnabled = true; // Toggle for ghost preview
+    bool ghostEnabled = true;        // Toggle for ghost preview
+    bool paused = false;             // Pause state
+    bool showNextTetromino = true;   // Toggle for next Tetromino preview
+    int nextShapeIndex = rand() % 7; // Index of the next Tetromino
 
     void setShape(int shapeIndex, int rotationIndex);
     bool checkCollision(int xOffset, int yOffset) const;

@@ -3,6 +3,9 @@
 #include <algorithm> // for min/max
 #include <cstdlib>   // for rand
 
+// Initialize the static member variable
+bool Tetromino::running = true;
+
 // Define the grid static member
 int Tetromino::grid[GRID_HEIGHT][GRID_WIDTH] = {0}; // All cells initially empty
 
@@ -157,8 +160,9 @@ void Tetromino::reset()
 {
     x = 3;
     y = 0;
-    currentShapeIndex = rand() % 7; // Random piece
-    rotationIndex = 0;              // Reset rotation
+    currentShapeIndex = nextShapeIndex; // Use the next Tetromino
+    nextShapeIndex = rand() % 7;        // Generate a new random Tetromino
+    rotationIndex = 0;                  // Reset rotation
     setShape(currentShapeIndex, rotationIndex);
 
     // Assign a random color to the active Tetromino
@@ -255,40 +259,44 @@ void Tetromino::handleInput(SDL_Event &e)
     if (e.type != SDL_KEYDOWN)
         return;
 
-    int prevX = x, prevY = y;
-
     switch (e.key.keysym.sym)
     {
-    case SDLK_LEFT:
-        if (x + getMinX() > 0 && !checkCollision(x - 1, y))
+    case SDLK_LEFT: // Move left
+        if (!checkCollision(x - 1, y))
             --x;
         break;
-    case SDLK_RIGHT:
-        if (x + getMaxX() < GRID_WIDTH - 1 && !checkCollision(x + 1, y))
+
+    case SDLK_RIGHT: // Move right
+        if (!checkCollision(x + 1, y))
             ++x;
         break;
-    case SDLK_DOWN:
-        if (y + getHeight() < GRID_HEIGHT && !checkCollision(x, y + 1))
+
+    case SDLK_DOWN: // Move down
+        if (!checkCollision(x, y + 1))
             ++y;
         break;
-    case SDLK_UP:
-        rotate(); // Rotation is already handled in the rotate() function
+
+    case SDLK_UP: // Rotate
+        rotate();
         break;
+
+    case SDLK_h: // Toggle next Tetromino preview
+        showNextTetromino = !showNextTetromino;
+        break;
+
     case SDLK_g: // Toggle ghost preview
         ghostEnabled = !ghostEnabled;
         break;
+
+    case SDLK_SPACE: // Hard drop
+        while (!checkCollision(x, y + 1))
+            ++y;
+        placeTetrominoInGrid();
+        reset();
+        break;
+
     default:
         break;
-    }
-
-    // If the Tetromino is moved down, check if it collides
-    if (y != prevY)
-    {
-        if (checkCollision(x, y))
-        {
-            y = prevY; // Restore the previous y if collision occurs
-            reset();   // Reset the Tetromino
-        }
     }
 }
 
@@ -370,6 +378,66 @@ void Tetromino::draw(SDL_Renderer *renderer)
             {
                 int px = (x + col) * BLOCK_SIZE;
                 int py = (y + row) * BLOCK_SIZE;
+                SDL_Rect block = {px, py, BLOCK_SIZE - 1, BLOCK_SIZE - 1};
+                SDL_RenderFillRect(renderer, &block);
+            }
+        }
+    }
+}
+
+void Tetromino::drawNextTetromino(SDL_Renderer *renderer, int offsetX, int offsetY)
+{
+    if (!showNextTetromino)
+        return;
+
+    // Dimensions of the preview box
+    const int PREVIEW_BOX_SIZE = 6 * BLOCK_SIZE; // 6x6 blocks
+    const int PREVIEW_BOX_BORDER = 2;            // Border thickness
+
+    // Draw the border of the preview box
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // White border
+    SDL_Rect borderRect = {offsetX, offsetY, PREVIEW_BOX_SIZE, PREVIEW_BOX_SIZE};
+    SDL_RenderFillRect(renderer, &borderRect);
+
+    // Draw the inner background of the preview box
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Black background
+    SDL_Rect innerRect = {offsetX + PREVIEW_BOX_BORDER, offsetY + PREVIEW_BOX_BORDER,
+                          PREVIEW_BOX_SIZE - 2 * PREVIEW_BOX_BORDER, PREVIEW_BOX_SIZE - 2 * PREVIEW_BOX_BORDER};
+    SDL_RenderFillRect(renderer, &innerRect);
+
+    // Calculate the bounding box of the next Tetromino
+    int minX = 4, maxX = -1, minY = 4, maxY = -1;
+    for (int row = 0; row < 4; ++row)
+    {
+        for (int col = 0; col < 4; ++col)
+        {
+            if (shapes[nextShapeIndex][0][row][col] != 0)
+            {
+                minX = std::min(minX, col);
+                maxX = std::max(maxX, col);
+                minY = std::min(minY, row);
+                maxY = std::max(maxY, row);
+            }
+        }
+    }
+
+    int tetrominoWidth = (maxX - minX + 1) * BLOCK_SIZE;
+    int tetrominoHeight = (maxY - minY + 1) * BLOCK_SIZE;
+
+    // Calculate the offset to center the Tetromino inside the preview box
+    int centerX = offsetX + (PREVIEW_BOX_SIZE - tetrominoWidth) / 2;
+    int centerY = offsetY + (PREVIEW_BOX_SIZE - tetrominoHeight) / 2;
+
+    // Draw the next Tetromino
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // White color for the next Tetromino
+    for (int row = 0; row < 4; ++row)
+    {
+        for (int col = 0; col < 4; ++col)
+        {
+            if (shapes[nextShapeIndex][0][row][col] != 0)
+            {
+                int px = centerX + (col - minX) * BLOCK_SIZE;
+                int py = centerY + (row - minY) * BLOCK_SIZE;
                 SDL_Rect block = {px, py, BLOCK_SIZE - 1, BLOCK_SIZE - 1};
                 SDL_RenderFillRect(renderer, &block);
             }
