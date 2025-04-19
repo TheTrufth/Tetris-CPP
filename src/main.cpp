@@ -1,9 +1,10 @@
 #include <SDL.h>
 #include <iostream>
+#include "Tetromino.h"
 
 const int GRID_WIDTH = 10;
 const int GRID_HEIGHT = 20;
-const int BLOCK_SIZE = 30; // pixels per block
+const int BLOCK_SIZE = 30;
 
 const int SCREEN_WIDTH = GRID_WIDTH * BLOCK_SIZE;
 const int SCREEN_HEIGHT = GRID_HEIGHT * BLOCK_SIZE;
@@ -20,24 +21,19 @@ int main(int argc, char *argv[])
 
     SDL_Window *win = SDL_CreateWindow("Tetris", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                        SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-    if (!win)
-    {
-        std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
-        SDL_Quit();
-        return 1;
-    }
-
     SDL_Renderer *renderer = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
-    if (!renderer)
+
+    if (!win || !renderer)
     {
-        std::cerr << "Renderer could not be created! SDL_Error: " << SDL_GetError() << std::endl;
-        SDL_DestroyWindow(win);
+        std::cerr << "SDL Initialization Failed!" << std::endl;
         SDL_Quit();
         return 1;
     }
 
+    Tetromino tetromino;
     bool running = true;
     SDL_Event event;
+    int frameCount = 0;
 
     while (running)
     {
@@ -46,17 +42,21 @@ int main(int argc, char *argv[])
         while (SDL_PollEvent(&event))
         {
             if (event.type == SDL_QUIT)
-            {
                 running = false;
-            }
         }
 
-        // Clear screen to black
+        // Logic
+        if (frameCount % 30 == 0)
+        {
+            tetromino.update();
+        }
+
+        // Render
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        // Draw grid lines in gray
-        SDL_SetRenderDrawColor(renderer, 80, 80, 80, 255); // gray lines
+        // Grid
+        SDL_SetRenderDrawColor(renderer, 80, 80, 80, 255);
         for (int x = 0; x < GRID_WIDTH; ++x)
         {
             for (int y = 0; y < GRID_HEIGHT; ++y)
@@ -66,14 +66,16 @@ int main(int argc, char *argv[])
             }
         }
 
+        // Draw Tetromino
+        tetromino.draw(renderer);
+
         SDL_RenderPresent(renderer);
 
-        // Frame limiter
         Uint32 frameTime = SDL_GetTicks() - frameStart;
         if (FRAME_DELAY > frameTime)
-        {
             SDL_Delay(FRAME_DELAY - frameTime);
-        }
+
+        ++frameCount;
     }
 
     SDL_DestroyRenderer(renderer);
