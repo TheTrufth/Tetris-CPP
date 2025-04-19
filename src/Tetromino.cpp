@@ -274,6 +274,9 @@ void Tetromino::handleInput(SDL_Event &e)
     case SDLK_UP:
         rotate(); // Rotation is already handled in the rotate() function
         break;
+    case SDLK_g: // Toggle ghost preview
+        ghostEnabled = !ghostEnabled;
+        break;
     default:
         break;
     }
@@ -330,6 +333,29 @@ void Tetromino::draw(SDL_Renderer *renderer)
                 int py = row * BLOCK_SIZE;
                 SDL_Rect block = {px, py, BLOCK_SIZE - 1, BLOCK_SIZE - 1};
                 SDL_RenderFillRect(renderer, &block);
+            }
+        }
+    }
+
+    // Draw the ghost Tetromino if enabled
+    if (ghostEnabled)
+    {
+        int ghostX, ghostY;
+        calculateGhostPosition(ghostX, ghostY);
+
+        // Set the ghost Tetromino color to semi-transparent grey
+        SDL_SetRenderDrawColor(renderer, 192, 192, 192, 100); // Semi-transparent grey (alpha = 128)
+        for (int row = 0; row < 4; ++row)
+        {
+            for (int col = 0; col < 4; ++col)
+            {
+                if (shape[row][col] != 0)
+                {
+                    int px = (ghostX + col) * BLOCK_SIZE;
+                    int py = (ghostY + row) * BLOCK_SIZE;
+                    SDL_Rect block = {px, py, BLOCK_SIZE - 1, BLOCK_SIZE - 1};
+                    SDL_RenderFillRect(renderer, &block);
+                }
             }
         }
     }
@@ -435,4 +461,16 @@ bool Tetromino::checkCollision(int newX, int newY)
         }
     }
     return false;
+}
+
+void Tetromino::calculateGhostPosition(int &ghostX, int &ghostY)
+{
+    ghostX = x;
+    ghostY = y;
+
+    // Simulate falling until collision
+    while (!checkCollision(ghostX, ghostY + 1))
+    {
+        ++ghostY;
+    }
 }
